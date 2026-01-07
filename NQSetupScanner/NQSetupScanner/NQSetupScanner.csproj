@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <!-- Define Quantower path - Update this to match your installation -->
+  <PropertyGroup>
+    <!-- Try common installation paths -->
+    <QuantowerPath Condition="Exists('C:\Quantower')">C:\Quantower</QuantowerPath>
+    <QuantowerPath Condition="Exists('D:\Quantower') AND '$(QuantowerPath)' == ''">D:\Quantower</QuantowerPath>
+    <QuantowerPath Condition="Exists('$(LOCALAPPDATA)\Quantower') AND '$(QuantowerPath)' == ''">$(LOCALAPPDATA)\Quantower</QuantowerPath>
+    <QuantowerPath Condition="Exists('$(ProgramFiles)\Quantower') AND '$(QuantowerPath)' == ''">$(ProgramFiles)\Quantower</QuantowerPath>
+    <!-- Fallback - user must set this -->
+    <QuantowerPath Condition="'$(QuantowerPath)' == ''">C:\Quantower</QuantowerPath>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -39,7 +51,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <!-- Quantower API References - These will be resolved by Quantower Algo extension -->
+    <!--
+      Quantower API Reference
+      If this fails, manually add reference to TradingPlatform.BusinessLayer.dll from:
+      [Your Quantower Folder]\Bin\TradingPlatform.BusinessLayer.dll
+    -->
     <Reference Include="TradingPlatform.BusinessLayer">
       <HintPath>$(QuantowerPath)\Bin\TradingPlatform.BusinessLayer.dll</HintPath>
       <Private>False</Private>
@@ -55,4 +71,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- Post-build: Copy DLL to Quantower indicators folder -->
+  <Target Name="CopyToQuantower" AfterTargets="Build" Condition="Exists('$(QuantowerPath)')">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
+          DestinationFolder="$(QuantowerPath)\Settings\Scripts\Indicators\"
+          SkipUnchangedFiles="true"
+          ContinueOnError="true" />
+    <Message Text="Copied $(AssemblyName).dll to Quantower indicators folder" Importance="High" />
+  </Target>
 </Project>
